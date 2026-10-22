@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Costume Contest Voting App</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Google Fonts: Fredoka & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            spooky: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+              950: '#2e1065',
+            },
+            pumpkin: {
+              400: '#fb923c',
+              500: '#f97316',
+              600: '#ea580c',
+            }
+          },
+          fontFamily: {
+            heading: ['Fredoka', 'cursive', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8f6f0;
+    }
+    .font-heading {
+      font-family: 'Fredoka', cursive, sans-serif;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #7c3aed;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Header Banner -->
+  <header class="bg-gradient-to-r from-spooky-950 via-spooky-800 to-pumpkin-600 text-white shadow-md relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10 pointer-events-none flex justify-around items-center text-4xl">
+      <i class="ph-fill ph-mask-happy"></i>
+      <i class="ph-fill ph-ghost"></i>
+      <i class="ph-fill ph-sparkle"></i>
+      <i class="ph-fill ph-trophy"></i>
+      <i class="ph-fill ph-mask-happy"></i>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 py-6 text-center relative z-10">
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <div class="inline-flex items-center justify-center space-x-2 bg-pumpkin-500/30 px-3 py-1 rounded-full text-pumpkin-200 text-xs font-semibold uppercase tracking-wider border border-pumpkin-400/30">
+          <i class="ph-fill ph-church text-sm"></i>
+          <span>Annual Fall Activity</span>
+        </div>
+        <div id="header-voting-status-badge" class="inline-flex items-center justify-center space-x-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/30 text-emerald-200 border border-emerald-400/40">
+          <i class="ph-bold ph-circle text-[8px] fill-emerald-300 animate-pulse"></i>
+          <span>Voting Open</span>
+        </div>
+      </div>
+
+      <h1 class="text-3xl sm:text-5xl font-heading tracking-wide drop-shadow-md text-pumpkin-400 flex items-center justify-center gap-2">
+        <i class="ph-fill ph-mask-happy text-spooky-700 bg-white rounded-full p-1 text-2xl sm:text-4xl shadow"></i>
+        Costume Contest Central
+      </h1>
+      <p class="mt-2 text-sm sm:text-base text-purple-100 max-w-lg mx-auto">
+        Check out all the awesome costumes, cast your 1st, 2nd, and 3rd place ballot, and help pick our winners!
+      </p>
+
+      <!-- Navigation / Admin Toggle -->
+      <div class="mt-4 flex justify-center gap-2">
+        <button id="nav-vote-btn" onclick="switchTab('vote')" class="px-4 py-2 rounded-full font-semibold text-sm transition shadow-sm bg-white text-spooky-800 hover:bg-purple-50">
+          <i class="ph-bold ph-note-pencil mr-1"></i> Cast Vote
+        </button>
+        <button id="nav-admin-btn" onclick="openAdminAuthModal()" class="px-4 py-2 rounded-full font-semibold text-sm transition bg-spooky-950/60 text-purple-200 hover:bg-spooky-950 border border-purple-500/30">
+          <i class="ph-bold ph-shield-check mr-1"></i> Admin Dashboard
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-grow max-w-4xl w-full mx-auto p-4 sm:p-6">
+
+    <!-- ==================== VOTING SECTION ==================== -->
+    <section id="tab-vote" class="space-y-6">
+      
+      <!-- Already Voted Banner -->
+      <div id="already-voted-notice" class="hidden bg-purple-100 border-l-4 border-spooky-600 text-spooky-950 p-4 rounded-r-lg shadow-sm">
+        <div class="flex items-start">
+          <i class="ph-fill ph-check-circle text-2xl text-spooky-600 mr-3 flex-shrink-0"></i>
+          <div>
+            <h3 class="font-bold text-base">Your Vote Has Been Recorded!</h3>
+            <p class="text-sm mt-1">Thank you for voting in today's Costume Contest! Your selections and feedback are submitted.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Voting Closed Notice Banner -->
+      <div id="voting-closed-notice" class="hidden bg-slate-800 text-white p-5 rounded-2xl shadow-md border-l-4 border-spooky-500">
+        <div class="flex items-center gap-3">
+          <div class="p-3 bg-spooky-600/30 text-spooky-300 rounded-xl text-2xl">
+            <i class="ph-fill ph-lock-key"></i>
+          </div>
+          <div>
+            <h3 class="font-heading text-lg text-pumpkin-400">Voting is Currently Closed</h3>
+            <p class="text-xs sm:text-sm text-slate-300 mt-0.5">Voting is either locked by event organizers or has concluded for today's contest.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Entry Reference Guide -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-purple-200/60 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-heading text-spooky-800 flex items-center gap-2">
+            <i class="ph-fill ph-sparkle text-pumpkin-500"></i> Today's Costume Lineup
+          </h2>
+          <span class="text-xs bg-purple-100 text-spooky-800 font-bold px-2.5 py-1 rounded-full" id="entries-badge-count">0 Entries</span>
+        </div>
+        <p class="text-slate-600 text-sm">Review the costume entries below, then rank your top 3 choices on the ballot!</p>
+        
+        <div id="voter-entries-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+          <!-- Dynamically populated entries list -->
+        </div>
+      </div>
+
+      <!-- Ranked Ballot Form -->
+      <form id="voting-form" onsubmit="handleVoteSubmit(event)" class="bg-white p-5 rounded-2xl shadow-sm border border-purple-200/60 space-y-6">
+        <div class="border-b border-slate-100 pb-3">
+          <h2 class="text-xl font-heading text-slate-800 flex items-center gap-2">
+            <i class="ph-fill ph-trophy text-pumpkin-500"></i> Official Costume Ballot
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">Rank your top 3 favorite costumes. Point weights: 1st Place = 3 pts, 2nd Place = 2 pts, 3rd Place = 1 pt.</p>
+        </div>
+
+        <!-- 1st Place Selection -->
+        <div class="bg-purple-50/60 p-4 rounded-xl border border-purple-200/80 space-y-2">
+          <label class="block font-heading text-spooky-900 text-base flex items-center gap-2">
+            <span class="w-7 h-7 bg-pumpkin-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm">1st</span>
+            1st Place Choice (3 Points) <span class="text-spooky-600">*</span>
+          </label>
+          <select id="vote-1st" required onchange="validateBallotSelections()" class="w-full p-3 bg-white border border-purple-300 rounded-xl text-slate-800 font-medium focus:ring-2 focus:ring-spooky-500 focus:outline-none">
+            <option value="">-- Select 1st Place Costume --</option>
+          </select>
+        </div>
+
+        <!-- 2nd Place Selection -->
+        <div class="bg-slate-50/80 p-4 rounded-xl border border-slate-200/80 space-y-2">
+          <label class="block font-heading text-slate-800 text-base flex items-center gap-2">
+            <span class="w-7 h-7 bg-slate-400 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm">2nd</span>
+            2nd Place Choice (2 Points) <span class="text-spooky-600">*</span>
+          </label>
+          <select id="vote-2nd" required onchange="validateBallotSelections()" class="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-800 font-medium focus:ring-2 focus:ring-spooky-500 focus:outline-none">
+            <option value="">-- Select 2nd Place Costume --</option>
+          </select>
+        </div>
+
+        <!-- 3rd Place Selection -->
+        <div class="bg-purple-900/5 p-4 rounded-xl border border-purple-900/10 space-y-2">
+          <label class="block font-heading text-spooky-900 text-base flex items-center gap-2">
+            <span class="w-7 h-7 bg-spooky-700 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm">3rd</span>
+            3rd Place Choice (1 Point) <span class="text-spooky-600">*</span>
+          </label>
+          <select id="vote-3rd" required onchange="validateBallotSelections()" class="w-full p-3 bg-white border border-purple-800/30 rounded-xl text-slate-800 font-medium focus:ring-2 focus:ring-spooky-700 focus:outline-none">
+            <option value="">-- Select 3rd Place Costume --</option>
+          </select>
+        </div>
+
+        <p id="ballot-error" class="text-xs text-spooky-600 font-bold hidden flex items-center gap-1">
+          <i class="ph-bold ph-warning-circle"></i> Each entry can only be chosen once per ballot!
+        </p>
+
+        <!-- Private Comment / Feedback Area -->
+        <div class="space-y-2 pt-2 border-t border-slate-100">
+          <label class="block font-heading text-slate-800 text-sm flex items-center gap-2">
+            <i class="ph-fill ph-chat-teardrop-text text-spooky-600 text-lg"></i>
+            Comments & Feedback <span class="text-xs font-normal text-slate-400">(Optional & Private)</span>
+          </label>
+          <textarea id="voter-comment" rows="3" placeholder="Leave a compliment, note on creativity, or favorite detail! (Only visible to admin organizers)" class="w-full p-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-spooky-500 focus:outline-none"></textarea>
+          <p class="text-xs text-slate-400"><i class="ph-fill ph-lock-key text-slate-400"></i> Your comments are completely private and will only be shared with event organizers.</p>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-2">
+          <button id="submit-ballot-btn" type="submit" class="w-full py-4 px-6 bg-gradient-to-r from-spooky-700 to-pumpkin-500 hover:from-spooky-800 hover:to-pumpkin-600 text-white font-heading text-xl rounded-2xl shadow-lg hover:shadow-xl transition transform active:scale-[0.99] flex items-center justify-center gap-2">
+            <i class="ph-bold ph-paper-plane-right"></i> Submit Official Ballot
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ==================== ADMIN / RESULTS SECTION ==================== -->
+    <section id="tab-admin" class="hidden space-y-6">
+
+      <!-- Admin Header Bar -->
+      <div class="bg-slate-900 text-white p-5 rounded-2xl shadow-md flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <span class="bg-pumpkin-500 text-slate-950 font-bold text-xs uppercase px-2.5 py-0.5 rounded-full">Organizer Portal</span>
+          <h2 class="text-2xl font-heading text-purple-300 mt-1">Admin Dashboard</h2>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="toggle-voting-status-btn" onclick="toggleVotingOpenStatus()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow transition flex items-center gap-1.5">
+            <i class="ph-bold ph-lock-key text-base"></i> <span id="admin-toggle-status-text">Voting: OPEN</span>
+          </button>
+          <button onclick="openAddEntryModal()" class="px-3.5 py-2 bg-pumpkin-500 hover:bg-pumpkin-600 text-white text-xs font-semibold rounded-xl shadow transition flex items-center gap-1.5">
+            <i class="ph-bold ph-plus-circle text-base"></i> Add Entry
+          </button>
+          <button onclick="exportResultsSummary()" class="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+            <i class="ph-bold ph-download-simple text-base"></i> Export Results
+          </button>
+          <button onclick="confirmResetVotes()" class="px-3.5 py-2 bg-red-950 hover:bg-red-900 text-red-200 border border-red-800 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+            <i class="ph-bold ph-arrow-counter-clockwise text-base"></i> Clear All Votes
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Stats Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div class="p-3 bg-purple-100 text-spooky-600 rounded-xl">
+            <i class="ph-fill ph-mask-happy text-2xl"></i>
+          </div>
+          <div>
+            <div id="stat-entries-count" class="text-2xl font-bold text-slate-800">0</div>
+            <div class="text-xs text-slate-500 font-medium">Costume Entries</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div class="p-3 bg-amber-100 text-pumpkin-500 rounded-xl">
+            <i class="ph-fill ph-ticket text-2xl"></i>
+          </div>
+          <div>
+            <div id="stat-voters-count" class="text-2xl font-bold text-slate-800">0</div>
+            <div class="text-xs text-slate-500 font-medium">Ballots Submitted</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div class="p-3 bg-purple-100 text-purple-600 rounded-xl">
+            <i class="ph-fill ph-chat-teardrop-dots text-2xl"></i>
+          </div>
+          <div>
+            <div id="stat-comments-count" class="text-2xl font-bold text-slate-800">0</div>
+            <div class="text-xs text-slate-500 font-medium">Feedback Comments</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Leaderboard Section -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 class="font-heading text-xl text-slate-800 flex items-center gap-2">
+            <i class="ph-fill ph-trophy text-pumpkin-500"></i> Overall Costume Standings
+          </h3>
+          <span class="text-xs text-slate-400">Scored by total points</span>
+        </div>
+
+        <div id="leaderboard-container" class="space-y-3">
+          <!-- Dynamically populated standings -->
+        </div>
+      </div>
+
+      <!-- Voter Feedback / Comments Review (Admin Only) -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 class="font-heading text-xl text-slate-800 flex items-center gap-2">
+            <i class="ph-fill ph-lock-key text-spooky-600"></i> Private Voter Comments & Feedback
+          </h3>
+          <span class="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-1 rounded">Admin Only</span>
+        </div>
+
+        <div id="admin-comments-container" class="space-y-3 max-h-80 overflow-y-auto pr-1">
+          <!-- Dynamically populated comments -->
+        </div>
+      </div>
+
+      <!-- Registered Entries Management -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-heading text-xl text-slate-800 flex items-center gap-2">
+            <i class="ph-fill ph-list-numbers text-pumpkin-500"></i> Registered Costume Entries
+          </h3>
+          <button onclick="openAddEntryModal()" class="text-xs font-semibold text-spooky-600 hover:text-spooky-700 underline">
+            + Add New Entry
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50 text-slate-700 text-xs uppercase font-semibold">
+              <tr>
+                <th class="p-3 rounded-l-lg">#</th>
+                <th class="p-3">Costume Title</th>
+                <th class="p-3">Participant Name(s)</th>
+                <th class="p-3">Description</th>
+                <th class="p-3 text-right rounded-r-lg">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-entries-table-body" class="divide-y divide-slate-100">
+              <!-- Entries rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Admin PIN Change Security Settings -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+        <h3 class="font-heading text-lg text-slate-800 flex items-center gap-2">
+          <i class="ph-fill ph-gear text-slate-600"></i> Security Settings: Update Admin PIN
+        </h3>
+        <p class="text-xs text-slate-500">Change the passcode required to access this dashboard.</p>
+        
+        <form onsubmit="handleChangeAdminPin(event)" class="flex flex-col sm:flex-row gap-3 items-start sm:items-center max-w-lg pt-1">
+          <input type="password" id="new-pin-input" required minlength="4" placeholder="Enter new PIN (min 4 chars)" class="px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-spooky-500 focus:outline-none w-full sm:w-auto flex-1">
+          <button type="submit" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs rounded-xl shadow transition whitespace-nowrap">
+            Update PIN
+          </button>
+        </form>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Admin Auth Modal -->
+  <div id="modal-admin-auth" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-slate-100 space-y-4 relative">
+      <button onclick="closeModal('modal-admin-auth')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+        <i class="ph-bold ph-x text-xl"></i>
+      </button>
+
+      <div class="text-center">
+        <div class="w-12 h-12 bg-purple-100 text-spooky-600 rounded-full flex items-center justify-center mx-auto mb-2 text-2xl">
+          <i class="ph-fill ph-lock-key"></i>
+        </div>
+        <h3 class="font-heading text-xl text-slate-800">Organizer Login</h3>
+        <p class="text-xs text-slate-500 mt-1">Enter your Admin PIN to unlock management.</p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Passcode / PIN</label>
+        <input type="password" id="admin-pin-input" placeholder="Default: 1234" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-center text-xl font-bold tracking-widest focus:ring-2 focus:ring-spooky-500 focus:outline-none">
+        <p id="pin-error-msg" class="text-xs text-spooky-600 font-semibold mt-1 hidden text-center">Incorrect PIN. Try again!</p>
+      </div>
+
+      <button onclick="verifyAdminPin()" class="w-full py-3 bg-spooky-700 hover:bg-spooky-800 text-white font-semibold rounded-xl shadow transition">
+        Unlock Dashboard
+      </button>
+    </div>
+  </div>
+
+  <!-- Add/Edit Entry Modal -->
+  <div id="modal-entry-form" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl border border-slate-100 space-y-4 relative">
+      <button onclick="closeModal('modal-entry-form')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+        <i class="ph-bold ph-x text-xl"></i>
+      </button>
+
+      <div>
+        <h3 id="entry-modal-title" class="font-heading text-xl text-slate-800">Add Costume Entry</h3>
+        <p class="text-xs text-slate-500">Register a contestant's costume entry.</p>
+      </div>
+
+      <form id="entry-form" onsubmit="handleSaveEntry(event)" class="space-y-3">
+        <input type="hidden" id="entry-id">
+        
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Entry Number #</label>
+          <input type="number" id="entry-number" required placeholder="e.g. 1" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-spooky-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Costume Name / Theme</label>
+          <input type="text" id="entry-title" required placeholder="e.g. Galactic Astronaut" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-spooky-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Participant / Family Name</label>
+          <input type="text" id="entry-chef" required placeholder="e.g. The Miller Family" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-spooky-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Description / Props</label>
+          <textarea id="entry-desc" rows="2" placeholder="e.g. Handmade cardboard rocket ship with LED light accents" class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-spooky-500 focus:outline-none"></textarea>
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" onclick="closeModal('modal-entry-form')" class="w-1/2 py-2.5 border border-slate-300 text-slate-600 font-semibold rounded-xl text-sm">Cancel</button>
+          <button type="submit" class="w-1/2 py-2.5 bg-spooky-700 hover:bg-spooky-800 text-white font-semibold rounded-xl text-sm shadow">Save Entry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast-notification" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 transition-all duration-300 transform translate-y-20 opacity-0 z-50">
+    <i id="toast-icon" class="ph-fill ph-info text-pumpkin-400 text-xl"></i>
+    <span id="toast-message" class="text-sm font-medium">Notification message</span>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // --- STATE MANAGEMENT ---
+    let adminPin = localStorage.getItem('costume_contest_admin_pin') || "1234";
+    let isAdminUnlocked = false;
+    let isVotingOpen = localStorage.getItem('costume_contest_is_open') === null ? true : localStorage.getItem('costume_contest_is_open') === 'true';
+
+    // Default Seed Entries
+    const defaultEntries = [
+      { id: "c1", number: 1, title: "Cardboard Transformer Robot", chef: "Tommy S.", desc: "Hand-painted box suit that actually transforms into a truck!" },
+      { id: "c2", number: 2, title: "Classic Glow-in-the-Dark Skeleton", chef: "Emma W.", desc: "Custom neon suit with glowing face paint." },
+      { id: "c3", number: 3, title: "Inflatable T-Rex Dinosaur", chef: "The Johnson Family", desc: "Hilarious fan-powered T-Rex costume complete with tiny arms." },
+      { id: "c4", number: 4, title: "Retro 80s Disco Queen", chef: "Rachel M.", desc: "Sparkly sequin jumpsuit, leg warmers, and disco ball accessories." }
+    ];
+
+    let entries = JSON.parse(localStorage.getItem('costume_contest_entries')) || defaultEntries;
+    let votes = JSON.parse(localStorage.getItem('costume_contest_votes')) || [];
+    let userHasVoted = localStorage.getItem('costume_contest_has_voted') === 'true';
+
+    function saveEntries() {
+      localStorage.setItem('costume_contest_entries', JSON.stringify(entries));
+    }
+    function saveVotes() {
+      localStorage.setItem('costume_contest_votes', JSON.stringify(votes));
+    }
+
+    // --- INITIALIZATION ---
+    window.onload = function() {
+      renderVoterLineup();
+      populateBallotDropdowns();
+      updateVotingStatusUI();
+      updateVotedStateUI();
+      renderAdminDashboard();
+    };
+
+    // --- VOTING OPEN/CLOSE TOGGLE LOGIC ---
+    function toggleVotingOpenStatus() {
+      isVotingOpen = !isVotingOpen;
+      localStorage.setItem('costume_contest_is_open', isVotingOpen ? 'true' : 'false');
+      
+      updateVotingStatusUI();
+      updateVotedStateUI();
+      
+      showToast(isVotingOpen ? "Voting is now OPEN to the public!" : "Voting is now CLOSED to the public!", isVotingOpen ? "success" : "warning");
+    }
+
+    function updateVotingStatusUI() {
+      const headerBadge = document.getElementById('header-voting-status-badge');
+      const adminToggleBtn = document.getElementById('toggle-voting-status-btn');
+      const adminToggleText = document.getElementById('admin-toggle-status-text');
+      const closedNotice = document.getElementById('voting-closed-notice');
+
+      if (isVotingOpen) {
+        headerBadge.className = "inline-flex items-center justify-center space-x-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/30 text-emerald-200 border border-emerald-400/40";
+        headerBadge.innerHTML = `<i class="ph-bold ph-circle text-[8px] fill-emerald-300 animate-pulse"></i> <span>Voting Open</span>`;
+        
+        if (adminToggleBtn) {
+          adminToggleBtn.className = "px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow transition flex items-center gap-1.5";
+          adminToggleText.innerText = "Voting: OPEN";
+        }
+
+        closedNotice.classList.add('hidden');
+      } else {
+        headerBadge.className = "inline-flex items-center justify-center space-x-1 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-red-950/60 text-red-200 border border-red-500/40";
+        headerBadge.innerHTML = `<i class="ph-bold ph-lock-key text-xs"></i> <span>Voting Closed</span>`;
+
+        if (adminToggleBtn) {
+          adminToggleBtn.className = "px-3.5 py-2 bg-red-700 hover:bg-red-800 text-white text-xs font-semibold rounded-xl shadow transition flex items-center gap-1.5";
+          adminToggleText.innerText = "Voting: CLOSED";
+        }
+
+        if (!userHasVoted) {
+          closedNotice.classList.remove('hidden');
+        }
+      }
+    }
+
+    // --- NAVIGATION ---
+    function switchTab(tab) {
+      const voteTab = document.getElementById('tab-vote');
+      const adminTab = document.getElementById('tab-admin');
+      const voteBtn = document.getElementById('nav-vote-btn');
+      const adminBtn = document.getElementById('nav-admin-btn');
+
+      if (tab === 'vote') {
+        voteTab.classList.remove('hidden');
+        adminTab.classList.add('hidden');
+        voteBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition shadow-sm bg-white text-spooky-800 hover:bg-purple-50";
+        adminBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition bg-spooky-950/60 text-purple-200 hover:bg-spooky-950 border border-purple-500/30";
+      } else if (tab === 'admin') {
+        voteTab.classList.add('hidden');
+        adminTab.classList.remove('hidden');
+        adminBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition shadow-sm bg-white text-spooky-800 hover:bg-purple-50";
+        voteBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition bg-spooky-950/60 text-purple-200 hover:bg-spooky-950 border border-purple-500/30";
+        renderAdminDashboard();
+      }
+    }
+
+    function openAdminAuthModal() {
+      if (isAdminUnlocked) {
+        switchTab('admin');
+      } else {
+        document.getElementById('admin-pin-input').value = '';
+        document.getElementById('pin-error-msg').classList.add('hidden');
+        document.getElementById('modal-admin-auth').classList.remove('hidden');
+      }
+    }
+
+    function verifyAdminPin() {
+      const inputPin = document.getElementById('admin-pin-input').value.trim();
+      if (inputPin === adminPin) {
+        isAdminUnlocked = true;
+        closeModal('modal-admin-auth');
+        switchTab('admin');
+        showToast("Welcome Admin!", "success");
+      } else {
+        document.getElementById('pin-error-msg').classList.remove('hidden');
+      }
+    }
+
+    function handleChangeAdminPin(e) {
+      e.preventDefault();
+      const newPin = document.getElementById('new-pin-input').value.trim();
+      if (newPin.length < 4) {
+        showToast("PIN must be at least 4 characters long.", "warning");
+        return;
+      }
+
+      if (confirm(`Are you sure you want to change the Admin PIN to "${newPin}"?`)) {
+        adminPin = newPin;
+        localStorage.setItem('costume_contest_admin_pin', newPin);
+        document.getElementById('new-pin-input').value = '';
+        showToast("Admin PIN successfully updated!", "success");
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    // --- VOTING RENDER & LOGIC ---
+    function renderVoterLineup() {
+      const grid = document.getElementById('voter-entries-grid');
+      const badge = document.getElementById('entries-badge-count');
+      grid.innerHTML = '';
+
+      badge.innerText = `${entries.length} Entries`;
+
+      if (entries.length === 0) {
+        grid.innerHTML = `<div class="col-span-2 text-center text-slate-400 py-6 italic">No costume entries registered yet.</div>`;
+        return;
+      }
+
+      const sorted = [...entries].sort((a,b) => a.number - b.number);
+      sorted.forEach(entry => {
+        const card = document.createElement('div');
+        card.className = "bg-purple-50/40 p-3.5 rounded-xl border border-purple-200/60 flex items-start gap-3";
+        card.innerHTML = `
+          <span class="font-heading text-lg font-bold bg-pumpkin-500 text-white rounded-lg px-2.5 py-1 shadow-sm">#${entry.number}</span>
+          <div class="flex-1">
+            <h4 class="font-bold text-slate-800 text-sm">${escapeHtml(entry.title)}</h4>
+            <span class="text-xs font-semibold text-spooky-700">Participant: ${escapeHtml(entry.chef)}</span>
+            ${entry.desc ? `<p class="text-xs text-slate-500 mt-1 line-clamp-2">${escapeHtml(entry.desc)}</p>` : ''}
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function populateBallotDropdowns() {
+      const selects = [
+        document.getElementById('vote-1st'),
+        document.getElementById('vote-2nd'),
+        document.getElementById('vote-3rd')
+      ];
+
+      const sorted = [...entries].sort((a,b) => a.number - b.number);
+
+      selects.forEach(sel => {
+        const currentVal = sel.value;
+        sel.innerHTML = `<option value="">-- Choose Costume --</option>`;
+        sorted.forEach(entry => {
+          const opt = document.createElement('option');
+          opt.value = entry.id;
+          opt.textContent = `#${entry.number} - ${entry.title} (${entry.chef})`;
+          sel.appendChild(opt);
+        });
+        sel.value = currentVal;
+      });
+
+      if (userHasVoted) {
+        const myVote = votes.find(v => v.voterId === getDeviceId());
+        if (myVote) {
+          selects[0].value = myVote.first || '';
+          selects[1].value = myVote.second || '';
+          selects[2].value = myVote.third || '';
+          document.getElementById('voter-comment').value = myVote.comment || '';
+        }
+      }
+    }
+
+    function validateBallotSelections() {
+      const first = document.getElementById('vote-1st').value;
+      const second = document.getElementById('vote-2nd').value;
+      const third = document.getElementById('vote-3rd').value;
+      const errorEl = document.getElementById('ballot-error');
+
+      const selected = [first, second, third].filter(val => val !== "");
+      const hasDuplicates = new Set(selected).size !== selected.length;
+
+      if (hasDuplicates) {
+        errorEl.classList.remove('hidden');
+        return false;
+      } else {
+        errorEl.classList.add('hidden');
+        return true;
+      }
+    }
+
+    function updateVotedStateUI() {
+      const notice = document.getElementById('already-voted-notice');
+      const votingForm = document.getElementById('voting-form');
+      const submitBtn = document.getElementById('submit-ballot-btn');
+      const selects = [
+        document.getElementById('vote-1st'),
+        document.getElementById('vote-2nd'),
+        document.getElementById('vote-3rd')
+      ];
+      const commentArea = document.getElementById('voter-comment');
+
+      if (userHasVoted) {
+        notice.classList.remove('hidden');
+        votingForm.classList.remove('hidden');
+        selects.forEach(s => s.disabled = true);
+        commentArea.disabled = true;
+        submitBtn.disabled = true;
+        submitBtn.className = "w-full py-4 px-6 bg-slate-300 text-slate-500 font-heading text-xl rounded-2xl cursor-not-allowed flex items-center justify-center gap-2";
+        submitBtn.innerHTML = `<i class="ph-bold ph-check-circle"></i> Official Ballot Recorded`;
+      } else if (!isVotingOpen) {
+        notice.classList.add('hidden');
+        votingForm.classList.add('hidden');
+      } else {
+        notice.classList.add('hidden');
+        votingForm.classList.remove('hidden');
+        selects.forEach(s => s.disabled = false);
+        commentArea.disabled = false;
+        submitBtn.disabled = false;
+        submitBtn.className = "w-full py-4 px-6 bg-gradient-to-r from-spooky-700 to-pumpkin-500 hover:from-spooky-800 hover:to-pumpkin-600 text-white font-heading text-xl rounded-2xl shadow-lg hover:shadow-xl transition transform active:scale-[0.99] flex items-center justify-center gap-2";
+        submitBtn.innerHTML = `<i class="ph-bold ph-paper-plane-right"></i> Submit Official Ballot`;
+      }
+    }
+
+    function getDeviceId() {
+      let devId = localStorage.getItem('costume_contest_device_id');
+      if (!devId) {
+        devId = 'voter_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('costume_contest_device_id', devId);
+      }
+      return devId;
+    }
+
+    function handleVoteSubmit(e) {
+      e.preventDefault();
+
+      if (!isVotingOpen) {
+        showToast("Voting is currently closed!", "warning");
+        return;
+      }
+
+      if (userHasVoted) {
+        showToast("You have already voted!", "warning");
+        return;
+      }
+
+      const first = document.getElementById('vote-1st').value;
+      const second = document.getElementById('vote-2nd').value;
+      const third = document.getElementById('vote-3rd').value;
+      const comment = document.getElementById('voter-comment').value.trim();
+
+      if (!first || !second || !third) {
+        showToast("Please select choices for 1st, 2nd, and 3rd place!", "warning");
+        return;
+      }
+
+      if (!validateBallotSelections()) {
+        showToast("You cannot select the same costume for multiple places!", "warning");
+        return;
+      }
+
+      const ballot = {
+        voterId: getDeviceId(),
+        timestamp: new Date().toISOString(),
+        first,
+        second,
+        third,
+        comment
+      };
+
+      votes.push(ballot);
+      saveVotes();
+
+      userHasVoted = true;
+      localStorage.setItem('costume_contest_has_voted', 'true');
+
+      updateVotedStateUI();
+      showToast("Your ballot & comments were submitted!", "success");
+    }
+
+    // --- ADMIN DASHBOARD RENDER LOGIC ---
+    function renderAdminDashboard() {
+      document.getElementById('stat-entries-count').innerText = entries.length;
+      document.getElementById('stat-voters-count').innerText = votes.length;
+      
+      const commentCount = votes.filter(v => v.comment && v.comment.length > 0).length;
+      document.getElementById('stat-comments-count').innerText = commentCount;
+
+      renderLeaderboard();
+      renderComments();
+      renderAdminEntriesTable();
+    }
+
+    function renderLeaderboard() {
+      const container = document.getElementById('leaderboard-container');
+      container.innerHTML = '';
+
+      if (entries.length === 0) {
+        container.innerHTML = `<div class="text-center text-slate-400 py-6 italic text-sm">No entries registered.</div>`;
+        return;
+      }
+
+      const scores = {};
+      const breakdown = {};
+      entries.forEach(e => {
+        scores[e.id] = 0;
+        breakdown[e.id] = { firsts: 0, seconds: 0, thirds: 0 };
+      });
+
+      votes.forEach(v => {
+        if (v.first && scores[v.first] !== undefined) {
+          scores[v.first] += 3;
+          breakdown[v.first].firsts++;
+        }
+        if (v.second && scores[v.second] !== undefined) {
+          scores[v.second] += 2;
+          breakdown[v.second].seconds++;
+        }
+        if (v.third && scores[v.third] !== undefined) {
+          scores[v.third] += 1;
+          breakdown[v.third].thirds++;
+        }
+      });
+
+      const sorted = [...entries].map(e => ({
+        ...e,
+        points: scores[e.id] || 0,
+        breakdown: breakdown[e.id] || { firsts: 0, seconds: 0, thirds: 0 }
+      })).sort((a,b) => b.points - a.points);
+
+      const maxPoints = Math.max(...sorted.map(s => s.points), 1);
+
+      sorted.forEach((entry, index) => {
+        const pct = Math.round((entry.points / maxPoints) * 100);
+
+        let badgeHtml = `<span class="w-7 h-7 bg-slate-200 text-slate-700 font-bold rounded-full flex items-center justify-center text-xs">#${index + 1}</span>`;
+        if (index === 0 && entry.points > 0) {
+          badgeHtml = `<span class="w-7 h-7 bg-amber-400 text-amber-950 font-bold rounded-full flex items-center justify-center text-xs shadow-md"><i class="ph-fill ph-crown text-base"></i></span>`;
+        } else if (index === 1 && entry.points > 0) {
+          badgeHtml = `<span class="w-7 h-7 bg-slate-300 text-slate-800 font-bold rounded-full flex items-center justify-center text-xs shadow-sm">2nd</span>`;
+        } else if (index === 2 && entry.points > 0) {
+          badgeHtml = `<span class="w-7 h-7 bg-pumpkin-600 text-white font-bold rounded-full flex items-center justify-center text-xs shadow-sm">3rd</span>`;
+        }
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-2";
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              ${badgeHtml}
+              <div>
+                <h4 class="font-bold text-slate-900 text-sm">${escapeHtml(entry.title)} <span class="text-xs font-normal text-slate-500">(Entry #${entry.number})</span></h4>
+                <p class="text-xs text-slate-500">Participant: ${escapeHtml(entry.chef)}</p>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-heading text-lg font-bold text-spooky-700">${entry.points} pts</span>
+            </div>
+          </div>
+
+          <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+            <div class="h-2 rounded-full ${index === 0 ? 'bg-pumpkin-500' : 'bg-spooky-600'}" style="width: ${pct}%"></div>
+          </div>
+
+          <div class="flex gap-3 text-[11px] text-slate-500 pt-0.5">
+            <span class="font-medium text-purple-800">1st Place Picks: <strong>${entry.breakdown.firsts}</strong></span>
+            <span class="font-medium text-slate-600">2nd Place Picks: <strong>${entry.breakdown.seconds}</strong></span>
+            <span class="font-medium text-pumpkin-600">3rd Place Picks: <strong>${entry.breakdown.thirds}</strong></span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderComments() {
+      const container = document.getElementById('admin-comments-container');
+      container.innerHTML = '';
+
+      const commentedVotes = votes.filter(v => v.comment && v.comment.length > 0);
+
+      if (commentedVotes.length === 0) {
+        container.innerHTML = `<div class="text-center text-slate-400 py-6 italic text-sm">No voter comments submitted yet.</div>`;
+        return;
+      }
+
+      const entriesMap = {};
+      entries.forEach(e => entriesMap[e.id] = `#${e.number} ${e.title}`);
+
+      commentedVotes.reverse().forEach(v => {
+        const firstTitle = entriesMap[v.first] || 'N/A';
+        const secondTitle = entriesMap[v.second] || 'N/A';
+        const thirdTitle = entriesMap[v.third] || 'N/A';
+        const formattedDate = new Date(v.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const card = document.createElement('div');
+        card.className = "p-3.5 bg-purple-50/50 border border-purple-200/60 rounded-xl space-y-1.5";
+        card.innerHTML = `
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span class="font-semibold text-slate-700"><i class="ph-fill ph-user"></i> Anonymous Voter</span>
+            <span>${formattedDate}</span>
+          </div>
+          <p class="text-sm text-slate-800 italic bg-white p-2.5 rounded-lg border border-slate-100">"${escapeHtml(v.comment)}"</p>
+          <div class="text-[11px] text-slate-500 flex flex-wrap gap-2 pt-1">
+            <span class="bg-purple-100 text-spooky-900 px-2 py-0.5 rounded">1st: ${escapeHtml(firstTitle)}</span>
+            <span class="bg-slate-200 text-slate-800 px-2 py-0.5 rounded">2nd: ${escapeHtml(secondTitle)}</span>
+            <span class="bg-pumpkin-100 text-pumpkin-900 px-2 py-0.5 rounded">3rd: ${escapeHtml(thirdTitle)}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderAdminEntriesTable() {
+      const tbody = document.getElementById('admin-entries-table-body');
+      tbody.innerHTML = '';
+
+      if (entries.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 italic">No costume entries found. Click "+ Add Entry" to register one!</td></tr>`;
+        return;
+      }
+
+      const sorted = [...entries].sort((a,b) => a.number - b.number);
+      sorted.forEach(entry => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition";
+        tr.innerHTML = `
+          <td class="p-3 font-bold text-spooky-700">#${entry.number}</td>
+          <td class="p-3 font-semibold text-slate-800">${escapeHtml(entry.title)}</td>
+          <td class="p-3 text-slate-600">${escapeHtml(entry.chef)}</td>
+          <td class="p-3 text-slate-500 text-xs max-w-xs truncate">${escapeHtml(entry.desc || 'N/A')}</td>
+          <td class="p-3 text-right space-x-1">
+            <button onclick="editEntry('${entry.id}')" class="p-1.5 text-slate-500 hover:text-pumpkin-500 rounded-lg hover:bg-slate-100">
+              <i class="ph-bold ph-pencil-simple text-base"></i>
+            </button>
+            <button onclick="deleteEntry('${entry.id}')" class="p-1.5 text-slate-500 hover:text-spooky-700 rounded-lg hover:bg-slate-100">
+              <i class="ph-bold ph-trash text-base"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // --- ENTRY CRUD LOGIC ---
+    function openAddEntryModal() {
+      document.getElementById('entry-modal-title').innerText = "Add Costume Entry";
+      document.getElementById('entry-form').reset();
+      document.getElementById('entry-id').value = '';
+
+      const nextNum = entries.length > 0 ? Math.max(...entries.map(e => e.number)) + 1 : 1;
+      document.getElementById('entry-number').value = nextNum;
+
+      document.getElementById('modal-entry-form').classList.remove('hidden');
+    }
+
+    function editEntry(id) {
+      const entry = entries.find(e => e.id === id);
+      if (!entry) return;
+
+      document.getElementById('entry-modal-title').innerText = "Edit Costume Entry";
+      document.getElementById('entry-id').value = entry.id;
+      document.getElementById('entry-number').value = entry.number;
+      document.getElementById('entry-title').value = entry.title;
+      document.getElementById('entry-chef').value = entry.chef;
+      document.getElementById('entry-desc').value = entry.desc || '';
+
+      document.getElementById('modal-entry-form').classList.remove('hidden');
+    }
+
+    function handleSaveEntry(e) {
+      e.preventDefault();
+
+      const id = document.getElementById('entry-id').value;
+      const number = parseInt(document.getElementById('entry-number').value, 10);
+      const title = document.getElementById('entry-title').value.trim();
+      const chef = document.getElementById('entry-chef').value.trim();
+      const desc = document.getElementById('entry-desc').value.trim();
+
+      if (id) {
+        const index = entries.findIndex(e => e.id === id);
+        if (index !== -1) {
+          entries[index] = { id, number, title, chef, desc };
+          showToast("Entry updated successfully!", "success");
+        }
+      } else {
+        const newEntry = {
+          id: 'c_' + Date.now(),
+          number,
+          title,
+          chef,
+          desc
+        };
+        entries.push(newEntry);
+        showToast("New costume entry added!", "success");
+      }
+
+      saveEntries();
+      closeModal('modal-entry-form');
+      renderVoterLineup();
+      populateBallotDropdowns();
+      renderAdminDashboard();
+    }
+
+    function deleteEntry(id) {
+      if (!confirm("Are you sure you want to remove this entry? Existing votes for this entry will be removed.")) {
+        return;
+      }
+
+      entries = entries.filter(e => e.id !== id);
+      saveEntries();
+      renderVoterLineup();
+      populateBallotDropdowns();
+      renderAdminDashboard();
+      showToast("Entry deleted.", "info");
+    }
+
+    function confirmResetVotes() {
+      if (confirm("DANGER: Are you sure you want to clear ALL ballots and comments? This action cannot be undone.")) {
+        votes = [];
+        saveVotes();
+        localStorage.removeItem('costume_contest_has_voted');
+        userHasVoted = false;
+
+        updateVotedStateUI();
+        populateBallotDropdowns();
+        renderAdminDashboard();
+        showToast("All votes & comments have been cleared!", "info");
+      }
+    }
+
+    function exportResultsSummary() {
+      if (entries.length === 0) {
+        showToast("No data to export.", "warning");
+        return;
+      }
+
+      let summary = `--- CHURCH COSTUME CONTEST OFFICIAL RESULTS ---\n`;
+      summary += `Date: ${new Date().toLocaleDateString()}\n`;
+      summary += `Total Ballots Cast: ${votes.length}\n\n`;
+
+      const scores = {};
+      entries.forEach(e => scores[e.id] = 0);
+      votes.forEach(v => {
+        if (v.first && scores[v.first] !== undefined) scores[v.first] += 3;
+        if (v.second && scores[v.second] !== undefined) scores[v.second] += 2;
+        if (v.third && scores[v.third] !== undefined) scores[v.third] += 1;
+      });
+
+      const sorted = [...entries].map(e => ({
+        ...e,
+        pts: scores[e.id] || 0
+      })).sort((a,b) => b.pts - a.pts);
+
+      summary += `=== OVERALL STANDINGS ===\n`;
+      sorted.forEach((e, idx) => {
+        summary += `${idx + 1}. #${e.number} ${e.title} (${e.chef}) - ${e.pts} points\n`;
+      });
+
+      const commentedVotes = votes.filter(v => v.comment && v.comment.length > 0);
+      if (commentedVotes.length > 0) {
+        summary += `\n=== PRIVATE VOTER FEEDBACK (${commentedVotes.length}) ===\n`;
+        commentedVotes.forEach((v, i) => {
+          summary += `${i + 1}. "${v.comment}"\n`;
+        });
+      }
+
+      const tempTextArea = document.createElement("textarea");
+      tempTextArea.value = summary;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempTextArea);
+
+      showToast("Results summary copied to clipboard!", "success");
+    }
+
+    function showToast(msg, type = "info") {
+      const toast = document.getElementById('toast-notification');
+      const toastMsg = document.getElementById('toast-message');
+      const toastIcon = document.getElementById('toast-icon');
+
+      toastMsg.innerText = msg;
+
+      if (type === "success") {
+        toastIcon.className = "ph-fill ph-check-circle text-emerald-400 text-xl";
+      } else if (type === "warning") {
+        toastIcon.className = "ph-fill ph-warning-circle text-amber-400 text-xl";
+      } else {
+        toastIcon.className = "ph-fill ph-info text-sky-400 text-xl";
+      }
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
