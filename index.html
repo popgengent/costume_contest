@@ -496,16 +496,16 @@
 
     // --- STATE MANAGEMENT ---
     let isAdminUnlocked = false;
-    let isVotingOpen = localStorage.getItem('costume_contest_is_open') === null ? true : localStorage.getItem('costume_contest_is_open') === 'true';
+    let isVotingOpen = true; // Will be synced from cloud
 
     let entries = [];
     let votes = [];
-    let userHasVoted = localStorage.getItem('costume_contest_has_voted') === 'true';
+    let userHasVoted = localStorage.getItem('chili_cookoff_has_voted') === 'true';
 
     // --- INITIALIZATION & CLOUD FETCHING ---
     window.onload = async function() {
       await loadDataFromCloud();
-      setInterval(loadDataFromCloud, 10000); // Auto-refresh data every 10 seconds across devices
+      setInterval(loadDataFromCloud, 10000); // Auto-refresh data & voting status every 10 seconds across devices
     };
 
     async function loadDataFromCloud() {
@@ -514,6 +514,15 @@
       }
 
       try {
+        // Fetch Voting Open/Closed Status
+        const settingsRes = await fetch(`${API_URL}?action=getSettings`);
+        if (settingsRes.ok) {
+          const settingsData = await settingsRes.json();
+          if (settingsData.isOpen !== undefined) {
+            isVotingOpen = settingsData.isOpen;
+          }
+        }
+
         // Fetch Entries
         const entriesRes = await fetch(`${API_URL}?sheet=entries`);
         if (entriesRes.ok) {
@@ -564,9 +573,20 @@
     }
 
     // --- VOTING OPEN/CLOSE TOGGLE LOGIC ---
-    function toggleVotingOpenStatus() {
+    async function toggleVotingOpenStatus() {
       isVotingOpen = !isVotingOpen;
-      localStorage.setItem('costume_contest_is_open', isVotingOpen ? 'true' : 'false');
+      
+      // Save status globally to Google Sheet
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: 'updateVotingStatus', isOpen: isVotingOpen })
+        });
+      } catch (err) {
+        console.error("Error updating voting status in cloud:", err);
+      }
       
       updateVotingStatusUI();
       updateVotedStateUI();
