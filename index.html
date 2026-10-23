@@ -91,16 +91,20 @@
         Costume Contest Central
       </h1>
       <p class="mt-2 text-sm sm:text-base text-purple-100 max-w-lg mx-auto">
-        Check out all the awesome costumes, cast your 1st, 2nd, and 3rd place ballot, and help pick our winners!
+        Submit your entry, vote for your favorite costumes, and help crown our champions!
       </p>
 
       <!-- Navigation / Admin Toggle -->
-      <div class="mt-4 flex justify-center gap-2">
+      <div class="mt-4 flex flex-wrap justify-center gap-2">
         <button id="nav-vote-btn" onclick="switchTab('vote')" class="px-4 py-2 rounded-full font-semibold text-sm transition shadow-sm bg-white text-spooky-800 hover:bg-purple-50">
           <i class="ph-bold ph-note-pencil mr-1"></i> Cast Vote
         </button>
-        <button id="nav-admin-btn" onclick="openAdminAuthModal()" class="px-4 py-2 rounded-full font-semibold text-sm transition bg-spooky-950/60 text-purple-200 hover:bg-spooky-950 border border-purple-500/30">
+        <button id="nav-submit-btn" onclick="switchTab('submit')" class="px-4 py-2 rounded-full font-semibold text-sm transition bg-pumpkin-500 text-white hover:bg-pumpkin-600 shadow-sm">
+          <i class="ph-bold ph-plus-circle mr-1"></i> Enter Costume
+        </button>
+        <button id="nav-admin-btn" onclick="openAdminAuthModal()" class="px-4 py-2 rounded-full font-semibold text-sm transition bg-spooky-950/60 text-purple-200 hover:bg-spooky-950 border border-purple-500/30 relative">
           <i class="ph-bold ph-shield-check mr-1"></i> Admin Dashboard
+          <span id="pending-badge-counter" class="hidden absolute -top-1 -right-1 bg-pumpkin-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-spooky-950">0</span>
         </button>
       </div>
     </div>
@@ -216,6 +220,39 @@
       </form>
     </section>
 
+    <!-- ==================== PUBLIC CONTESTANT SUBMISSION SECTION ==================== -->
+    <section id="tab-submit" class="hidden max-w-xl mx-auto space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-purple-200/60 space-y-4">
+        <div class="border-b border-slate-100 pb-3">
+          <h2 class="text-2xl font-heading text-spooky-800 flex items-center gap-2">
+            <i class="ph-fill ph-plus-circle text-pumpkin-500"></i> Enter Your Costume
+          </h2>
+          <p class="text-xs text-slate-500 mt-1">Submit your costume details below. Event organizers will review and approve your entry before it appears on the ballot.</p>
+        </div>
+
+        <form onsubmit="handlePublicEntrySubmit(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Participant / Family Name <span class="text-spooky-600">*</span></label>
+            <input type="text" id="public-chef" required placeholder="e.g. Tommy S. or The Johnson Family" class="w-full p-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-spooky-500 focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Costume Title / Theme <span class="text-spooky-600">*</span></label>
+            <input type="text" id="public-title" required placeholder="e.g. Inflatable T-Rex Dinosaur" class="w-full p-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-spooky-500 focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Description / Fun Details <span class="text-xs font-normal text-slate-400">(Optional)</span></label>
+            <textarea id="public-desc" rows="3" placeholder="e.g. Handmade cardboard suit, glow-in-the-dark accents, fan-powered" class="w-full p-3 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-spooky-500 focus:outline-none"></textarea>
+          </div>
+
+          <button type="submit" class="w-full py-3.5 bg-pumpkin-500 hover:bg-pumpkin-600 text-white font-heading text-lg rounded-xl shadow transition flex items-center justify-center gap-2">
+            <i class="ph-bold ph-paper-plane-tilt"></i> Submit Entry for Approval
+          </button>
+        </form>
+      </div>
+    </section>
+
     <!-- ==================== ADMIN / RESULTS SECTION ==================== -->
     <section id="tab-admin" class="hidden space-y-6">
 
@@ -242,35 +279,59 @@
       </div>
 
       <!-- Quick Stats Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
           <div class="p-3 bg-purple-100 text-spooky-600 rounded-xl">
             <i class="ph-fill ph-mask-happy text-2xl"></i>
           </div>
           <div>
             <div id="stat-entries-count" class="text-2xl font-bold text-slate-800">0</div>
-            <div class="text-xs text-slate-500 font-medium">Costume Entries</div>
+            <div class="text-xs text-slate-500 font-medium">Approved Entries</div>
           </div>
         </div>
 
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
           <div class="p-3 bg-amber-100 text-pumpkin-500 rounded-xl">
+            <i class="ph-fill ph-clock-countdown text-2xl"></i>
+          </div>
+          <div>
+            <div id="stat-pending-count" class="text-2xl font-bold text-amber-600">0</div>
+            <div class="text-xs text-slate-500 font-medium">Pending Review</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <div class="p-3 bg-blue-100 text-blue-600 rounded-xl">
             <i class="ph-fill ph-ticket text-2xl"></i>
           </div>
           <div>
             <div id="stat-voters-count" class="text-2xl font-bold text-slate-800">0</div>
-            <div class="text-xs text-slate-500 font-medium">Ballots Submitted</div>
+            <div class="text-xs text-slate-500 font-medium">Ballots Cast</div>
           </div>
         </div>
 
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3">
           <div class="p-3 bg-purple-100 text-purple-600 rounded-xl">
             <i class="ph-fill ph-chat-teardrop-dots text-2xl"></i>
           </div>
           <div>
             <div id="stat-comments-count" class="text-2xl font-bold text-slate-800">0</div>
-            <div class="text-xs text-slate-500 font-medium">Feedback Comments</div>
+            <div class="text-xs text-slate-500 font-medium">Comments</div>
           </div>
+        </div>
+      </div>
+
+      <!-- Pending Entries Moderation Queue -->
+      <div id="admin-pending-section" class="bg-amber-50/60 p-5 rounded-2xl shadow-sm border border-amber-200 space-y-4">
+        <div class="flex items-center justify-between border-b border-amber-200/80 pb-3">
+          <h3 class="font-heading text-xl text-amber-900 flex items-center gap-2">
+            <i class="ph-fill ph-clock-countdown text-pumpkin-500"></i> Entries Pending Approval
+          </h3>
+          <span class="text-xs bg-amber-200 text-amber-900 font-bold px-2.5 py-1 rounded-full" id="pending-badge-text">0 Pending</span>
+        </div>
+
+        <div id="admin-pending-container" class="space-y-3">
+          <!-- Pending items rendered here dynamically -->
         </div>
       </div>
 
@@ -302,11 +363,11 @@
         </div>
       </div>
 
-      <!-- Registered Entries Management -->
+      <!-- Approved Entries Management -->
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
         <div class="flex items-center justify-between">
           <h3 class="font-heading text-xl text-slate-800 flex items-center gap-2">
-            <i class="ph-fill ph-list-numbers text-pumpkin-500"></i> Registered Costume Entries
+            <i class="ph-fill ph-list-numbers text-pumpkin-500"></i> Registered / Approved Costume Entries
           </h3>
           <button onclick="openAddEntryModal()" class="text-xs font-semibold text-spooky-600 hover:text-spooky-700 underline">
             + Add New Entry
@@ -388,7 +449,7 @@
 
       <div>
         <h3 id="entry-modal-title" class="font-heading text-xl text-slate-800">Add Costume Entry</h3>
-        <p class="text-xs text-slate-500">Register a contestant's costume entry.</p>
+        <p class="text-xs text-slate-500">Register a contestant's costume entry directly.</p>
       </div>
 
       <form id="entry-form" onsubmit="handleSaveEntry(event)" class="space-y-3">
@@ -437,10 +498,10 @@
 
     // Default Seed Entries
     const defaultEntries = [
-      { id: "c1", number: 1, title: "Cardboard Transformer Robot", chef: "Tommy S.", desc: "Hand-painted box suit that actually transforms into a truck!" },
-      { id: "c2", number: 2, title: "Classic Glow-in-the-Dark Skeleton", chef: "Emma W.", desc: "Custom neon suit with glowing face paint." },
-      { id: "c3", number: 3, title: "Inflatable T-Rex Dinosaur", chef: "The Johnson Family", desc: "Hilarious fan-powered T-Rex costume complete with tiny arms." },
-      { id: "c4", number: 4, title: "Retro 80s Disco Queen", chef: "Rachel M.", desc: "Sparkly sequin jumpsuit, leg warmers, and disco ball accessories." }
+      { id: "c1", number: 1, title: "Cardboard Transformer Robot", chef: "Tommy S.", desc: "Hand-painted box suit that actually transforms into a truck!", status: "approved" },
+      { id: "c2", number: 2, title: "Classic Glow-in-the-Dark Skeleton", chef: "Emma W.", desc: "Custom neon suit with glowing face paint.", status: "approved" },
+      { id: "c3", number: 3, title: "Inflatable T-Rex Dinosaur", chef: "The Johnson Family", desc: "Hilarious fan-powered T-Rex costume complete with tiny arms.", status: "approved" },
+      { id: "c4", number: 4, title: "Retro 80s Disco Queen", chef: "Rachel M.", desc: "Sparkly sequin jumpsuit, leg warmers, and disco ball accessories.", status: "approved" }
     ];
 
     let entries = JSON.parse(localStorage.getItem('costume_contest_entries')) || defaultEntries;
@@ -508,20 +569,31 @@
     // --- NAVIGATION ---
     function switchTab(tab) {
       const voteTab = document.getElementById('tab-vote');
+      const submitTab = document.getElementById('tab-submit');
       const adminTab = document.getElementById('tab-admin');
+      
       const voteBtn = document.getElementById('nav-vote-btn');
+      const submitBtn = document.getElementById('nav-submit-btn');
       const adminBtn = document.getElementById('nav-admin-btn');
+
+      // Reset active classes
+      voteBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition bg-spooky-950/40 text-purple-200 hover:bg-spooky-900 border border-purple-500/20";
+      submitBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition bg-spooky-950/40 text-purple-200 hover:bg-spooky-900 border border-purple-500/20";
+      adminBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition bg-spooky-950/40 text-purple-200 hover:bg-spooky-900 border border-purple-500/20 relative";
+
+      voteTab.classList.add('hidden');
+      submitTab.classList.add('hidden');
+      adminTab.classList.add('hidden');
 
       if (tab === 'vote') {
         voteTab.classList.remove('hidden');
-        adminTab.classList.add('hidden');
         voteBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition shadow-sm bg-white text-spooky-800 hover:bg-purple-50";
-        adminBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition bg-spooky-950/60 text-purple-200 hover:bg-spooky-950 border border-purple-500/30";
+      } else if (tab === 'submit') {
+        submitTab.classList.remove('hidden');
+        submitBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition shadow-sm bg-pumpkin-500 text-white hover:bg-pumpkin-600";
       } else if (tab === 'admin') {
-        voteTab.classList.add('hidden');
         adminTab.classList.remove('hidden');
-        adminBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition shadow-sm bg-white text-spooky-800 hover:bg-purple-50";
-        voteBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition bg-spooky-950/60 text-purple-200 hover:bg-spooky-950 border border-purple-500/30";
+        adminBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition shadow-sm bg-white text-spooky-800 hover:bg-purple-50 relative";
         renderAdminDashboard();
       }
     }
@@ -568,20 +640,55 @@
       document.getElementById(id).classList.add('hidden');
     }
 
+    // --- PUBLIC SUBMISSION LOGIC ---
+    function handlePublicEntrySubmit(e) {
+      e.preventDefault();
+
+      const chef = document.getElementById('public-chef').value.trim();
+      const title = document.getElementById('public-title').value.trim();
+      const desc = document.getElementById('public-desc').value.trim();
+
+      const newEntry = {
+        id: 'c_' + Date.now(),
+        number: 0, // Assigned upon admin approval
+        title,
+        chef,
+        desc,
+        status: 'pending'
+      };
+
+      entries.push(newEntry);
+      saveEntries();
+
+      // Reset form
+      document.getElementById('public-chef').value = '';
+      document.getElementById('public-title').value = '';
+      document.getElementById('public-desc').value = '';
+
+      renderAdminDashboard();
+      showToast("Entry submitted! An organizer will review and approve it shortly.", "success");
+      switchTab('vote');
+    }
+
     // --- VOTING RENDER & LOGIC ---
+    function getApprovedEntries() {
+      return entries.filter(e => e.status === 'approved' || !e.status);
+    }
+
     function renderVoterLineup() {
       const grid = document.getElementById('voter-entries-grid');
       const badge = document.getElementById('entries-badge-count');
       grid.innerHTML = '';
 
-      badge.innerText = `${entries.length} Entries`;
+      const approved = getApprovedEntries();
+      badge.innerText = `${approved.length} Entries`;
 
-      if (entries.length === 0) {
-        grid.innerHTML = `<div class="col-span-2 text-center text-slate-400 py-6 italic">No costume entries registered yet.</div>`;
+      if (approved.length === 0) {
+        grid.innerHTML = `<div class="col-span-2 text-center text-slate-400 py-6 italic">No approved costume entries yet. Submit your costume above!</div>`;
         return;
       }
 
-      const sorted = [...entries].sort((a,b) => a.number - b.number);
+      const sorted = [...approved].sort((a,b) => a.number - b.number);
       sorted.forEach(entry => {
         const card = document.createElement('div');
         card.className = "bg-purple-50/40 p-3.5 rounded-xl border border-purple-200/60 flex items-start gap-3";
@@ -604,7 +711,8 @@
         document.getElementById('vote-3rd')
       ];
 
-      const sorted = [...entries].sort((a,b) => a.number - b.number);
+      const approved = getApprovedEntries();
+      const sorted = [...approved].sort((a,b) => a.number - b.number);
 
       selects.forEach(sel => {
         const currentVal = sel.value;
@@ -738,29 +846,102 @@
 
     // --- ADMIN DASHBOARD RENDER LOGIC ---
     function renderAdminDashboard() {
-      document.getElementById('stat-entries-count').innerText = entries.length;
+      const approved = getApprovedEntries();
+      const pending = entries.filter(e => e.status === 'pending');
+
+      document.getElementById('stat-entries-count').innerText = approved.length;
+      document.getElementById('stat-pending-count').innerText = pending.length;
       document.getElementById('stat-voters-count').innerText = votes.length;
       
       const commentCount = votes.filter(v => v.comment && v.comment.length > 0).length;
       document.getElementById('stat-comments-count').innerText = commentCount;
 
+      // Update Nav Badge Counter
+      const counterBadge = document.getElementById('pending-badge-counter');
+      if (pending.length > 0) {
+        counterBadge.innerText = pending.length;
+        counterBadge.classList.remove('hidden');
+      } else {
+        counterBadge.classList.add('hidden');
+      }
+
+      renderPendingQueue(pending);
       renderLeaderboard();
       renderComments();
       renderAdminEntriesTable();
+    }
+
+    function renderPendingQueue(pending) {
+      const container = document.getElementById('admin-pending-container');
+      const badgeText = document.getElementById('pending-badge-text');
+      const section = document.getElementById('admin-pending-section');
+      
+      container.innerHTML = '';
+      badgeText.innerText = `${pending.length} Pending`;
+
+      if (pending.length === 0) {
+        section.classList.add('hidden');
+        return;
+      }
+
+      section.classList.remove('hidden');
+
+      pending.forEach(entry => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Pending Review</span>
+              <h4 class="font-bold text-slate-800 text-base">${escapeHtml(entry.title)}</h4>
+            </div>
+            <p class="text-xs font-semibold text-spooky-700 mt-0.5">Participant: ${escapeHtml(entry.chef)}</p>
+            ${entry.desc ? `<p class="text-xs text-slate-500 mt-1">${escapeHtml(entry.desc)}</p>` : ''}
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button onclick="approveEntry('${entry.id}')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow transition flex items-center gap-1">
+              <i class="ph-bold ph-check text-base"></i> Approve
+            </button>
+            <button onclick="deleteEntry('${entry.id}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs rounded-xl transition flex items-center gap-1">
+              <i class="ph-bold ph-x text-base"></i> Reject
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function approveEntry(id) {
+      const entry = entries.find(e => e.id === id);
+      if (!entry) return;
+
+      const approved = getApprovedEntries();
+      const nextNum = approved.length > 0 ? Math.max(...approved.map(e => e.number || 0)) + 1 : 1;
+
+      entry.status = 'approved';
+      entry.number = nextNum;
+
+      saveEntries();
+      renderVoterLineup();
+      populateBallotDropdowns();
+      renderAdminDashboard();
+      showToast(`Approved "${entry.title}" as Entry #${nextNum}!`, "success");
     }
 
     function renderLeaderboard() {
       const container = document.getElementById('leaderboard-container');
       container.innerHTML = '';
 
-      if (entries.length === 0) {
-        container.innerHTML = `<div class="text-center text-slate-400 py-6 italic text-sm">No entries registered.</div>`;
+      const approved = getApprovedEntries();
+
+      if (approved.length === 0) {
+        container.innerHTML = `<div class="text-center text-slate-400 py-6 italic text-sm">No approved entries registered yet.</div>`;
         return;
       }
 
       const scores = {};
       const breakdown = {};
-      entries.forEach(e => {
+      approved.forEach(e => {
         scores[e.id] = 0;
         breakdown[e.id] = { firsts: 0, seconds: 0, thirds: 0 };
       });
@@ -780,7 +961,7 @@
         }
       });
 
-      const sorted = [...entries].map(e => ({
+      const sorted = [...approved].map(e => ({
         ...e,
         points: scores[e.id] || 0,
         breakdown: breakdown[e.id] || { firsts: 0, seconds: 0, thirds: 0 }
@@ -872,12 +1053,14 @@
       const tbody = document.getElementById('admin-entries-table-body');
       tbody.innerHTML = '';
 
-      if (entries.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 italic">No costume entries found. Click "+ Add Entry" to register one!</td></tr>`;
+      const approved = getApprovedEntries();
+
+      if (approved.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 italic">No approved costume entries found. Click "+ Add Entry" to register one manually!</td></tr>`;
         return;
       }
 
-      const sorted = [...entries].sort((a,b) => a.number - b.number);
+      const sorted = [...approved].sort((a,b) => a.number - b.number);
       sorted.forEach(entry => {
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition";
@@ -905,7 +1088,8 @@
       document.getElementById('entry-form').reset();
       document.getElementById('entry-id').value = '';
 
-      const nextNum = entries.length > 0 ? Math.max(...entries.map(e => e.number)) + 1 : 1;
+      const approved = getApprovedEntries();
+      const nextNum = approved.length > 0 ? Math.max(...approved.map(e => e.number || 0)) + 1 : 1;
       document.getElementById('entry-number').value = nextNum;
 
       document.getElementById('modal-entry-form').classList.remove('hidden');
@@ -917,7 +1101,7 @@
 
       document.getElementById('entry-modal-title').innerText = "Edit Costume Entry";
       document.getElementById('entry-id').value = entry.id;
-      document.getElementById('entry-number').value = entry.number;
+      document.getElementById('entry-number').value = entry.number || 1;
       document.getElementById('entry-title').value = entry.title;
       document.getElementById('entry-chef').value = entry.chef;
       document.getElementById('entry-desc').value = entry.desc || '';
@@ -937,7 +1121,7 @@
       if (id) {
         const index = entries.findIndex(e => e.id === id);
         if (index !== -1) {
-          entries[index] = { id, number, title, chef, desc };
+          entries[index] = { ...entries[index], number, title, chef, desc, status: 'approved' };
           showToast("Entry updated successfully!", "success");
         }
       } else {
@@ -946,7 +1130,8 @@
           number,
           title,
           chef,
-          desc
+          desc,
+          status: 'approved'
         };
         entries.push(newEntry);
         showToast("New costume entry added!", "success");
@@ -960,7 +1145,7 @@
     }
 
     function deleteEntry(id) {
-      if (!confirm("Are you sure you want to remove this entry? Existing votes for this entry will be removed.")) {
+      if (!confirm("Are you sure you want to remove this entry?")) {
         return;
       }
 
@@ -969,7 +1154,7 @@
       renderVoterLineup();
       populateBallotDropdowns();
       renderAdminDashboard();
-      showToast("Entry deleted.", "info");
+      showToast("Entry removed.", "info");
     }
 
     function confirmResetVotes() {
@@ -987,7 +1172,8 @@
     }
 
     function exportResultsSummary() {
-      if (entries.length === 0) {
+      const approved = getApprovedEntries();
+      if (approved.length === 0) {
         showToast("No data to export.", "warning");
         return;
       }
@@ -997,14 +1183,14 @@
       summary += `Total Ballots Cast: ${votes.length}\n\n`;
 
       const scores = {};
-      entries.forEach(e => scores[e.id] = 0);
+      approved.forEach(e => scores[e.id] = 0);
       votes.forEach(v => {
         if (v.first && scores[v.first] !== undefined) scores[v.first] += 3;
         if (v.second && scores[v.second] !== undefined) scores[v.second] += 2;
         if (v.third && scores[v.third] !== undefined) scores[v.third] += 1;
       });
 
-      const sorted = [...entries].map(e => ({
+      const sorted = [...approved].map(e => ({
         ...e,
         pts: scores[e.id] || 0
       })).sort((a,b) => b.pts - a.pts);
