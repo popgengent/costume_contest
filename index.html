@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Costume Contest Voting App</title>
+  <title>Costume Contest App</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Phosphor Icons -->
@@ -322,7 +322,7 @@
       </div>
 
       <!-- Pending Entries Moderation Queue -->
-      <div id="admin-pending-section" class="bg-amber-50/60 p-5 rounded-2xl shadow-sm border border-amber-200 space-y-4">
+      <div id="admin-pending-section" class="bg-amber-50/60 p-5 rounded-2xl shadow-sm border border-amber-200 space-y-4 hidden">
         <div class="flex items-center justify-between border-b border-amber-200/80 pb-3">
           <h3 class="font-heading text-xl text-amber-900 flex items-center gap-2">
             <i class="ph-fill ph-clock-countdown text-pumpkin-500"></i> Entries Pending Approval
@@ -397,7 +397,7 @@
         <h3 class="font-heading text-lg text-slate-800 flex items-center gap-2">
           <i class="ph-fill ph-gear text-slate-600"></i> Security Settings: Update Admin PIN
         </h3>
-        <p class="text-xs text-slate-500">Change the passcode required to access this dashboard.</p>
+        <p class="text-xs text-slate-500">Change the passcode required to access this dashboard globally.</p>
         
         <form onsubmit="handleChangeAdminPin(event)" class="flex flex-col sm:flex-row gap-3 items-start sm:items-center max-w-lg pt-1">
           <input type="password" id="new-pin-input" required minlength="4" placeholder="Enter new PIN (min 4 chars)" class="px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-spooky-500 focus:outline-none w-full sm:w-auto flex-1">
@@ -491,38 +491,77 @@
 
   <!-- JavaScript Logic -->
   <script>
+    // --- API CONFIGURATION ---
+    const API_URL = "https://script.google.com/macros/s/AKfycbw14yyr05Jwiuq0yqMV5bUI-ppVSFV9RfCOEUDlaRkFsSgCV7EtzFzhlMNZTRkBT7p9/exec"; // <-- PASTE YOUR WEB APP URL HERE
+
     // --- STATE MANAGEMENT ---
-    let adminPin = localStorage.getItem('costume_contest_admin_pin') || "1234";
     let isAdminUnlocked = false;
     let isVotingOpen = localStorage.getItem('costume_contest_is_open') === null ? true : localStorage.getItem('costume_contest_is_open') === 'true';
 
-    // Default Seed Entries
-    const defaultEntries = [
-      { id: "c1", number: 1, title: "Cardboard Transformer Robot", chef: "Tommy S.", desc: "Hand-painted box suit that actually transforms into a truck!", status: "approved" },
-      { id: "c2", number: 2, title: "Classic Glow-in-the-Dark Skeleton", chef: "Emma W.", desc: "Custom neon suit with glowing face paint.", status: "approved" },
-      { id: "c3", number: 3, title: "Inflatable T-Rex Dinosaur", chef: "The Johnson Family", desc: "Hilarious fan-powered T-Rex costume complete with tiny arms.", status: "approved" },
-      { id: "c4", number: 4, title: "Retro 80s Disco Queen", chef: "Rachel M.", desc: "Sparkly sequin jumpsuit, leg warmers, and disco ball accessories.", status: "approved" }
-    ];
-
-    let entries = JSON.parse(localStorage.getItem('costume_contest_entries')) || defaultEntries;
-    let votes = JSON.parse(localStorage.getItem('costume_contest_votes')) || [];
+    let entries = [];
+    let votes = [];
     let userHasVoted = localStorage.getItem('costume_contest_has_voted') === 'true';
 
-    function saveEntries() {
-      localStorage.setItem('costume_contest_entries', JSON.stringify(entries));
-    }
-    function saveVotes() {
-      localStorage.setItem('costume_contest_votes', JSON.stringify(votes));
-    }
+    // --- INITIALIZATION & CLOUD FETCHING ---
+    window.onload = async function() {
+      await loadDataFromCloud();
+      setInterval(loadDataFromCloud, 10000); // Auto-refresh data every 10 seconds across devices
+    };
 
-    // --- INITIALIZATION ---
-    window.onload = function() {
+    async function loadDataFromCloud() {
+      if (API_URL.includes("YOUR_GOOGLE_APPS_SCRIPT")) {
+        console.warn("API_URL not configured yet.");
+      }
+
+      try {
+        // Fetch Entries
+        const entriesRes = await fetch(`${API_URL}?sheet=entries`);
+        if (entriesRes.ok) {
+          const entriesData = await entriesRes.json();
+          if (Array.isArray(entriesData)) {
+            entries = entriesData.map(e => ({
+              ...e,
+              number: e.number ? parseInt(e.number, 10) : 0
+            }));
+          }
+        }
+
+        // Fetch Votes
+        const votesRes = await fetch(`${API_URL}?sheet=votes`);
+        if (votesRes.ok) {
+          const votesData = await votesRes.json();
+          if (Array.isArray(votesData)) {
+            votes = votesData;
+          }
+        }
+      } catch (err) {
+        console.error("Error syncing with Google Sheets:", err);
+      }
+
       renderVoterLineup();
       populateBallotDropdowns();
       updateVotingStatusUI();
       updateVotedStateUI();
       renderAdminDashboard();
-    };
+    }
+
+    async function sendCloudAction(sheetName, action, rowData, id = null) {
+      if (API_URL.includes("YOUR_GOOGLE_APPS_SCRIPT")) {
+        showToast("Please configure your Google Apps Script URL in the code!", "warning");
+        return;
+      }
+
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sheet: sheetName, action, row: rowData, id })
+        });
+      } catch (err) {
+        console.error("Cloud action error:", err);
+      }
+    }
 
     // --- VOTING OPEN/CLOSE TOGGLE LOGIC ---
     function toggleVotingOpenStatus() {
@@ -576,7 +615,6 @@
       const submitBtn = document.getElementById('nav-submit-btn');
       const adminBtn = document.getElementById('nav-admin-btn');
 
-      // Reset active classes
       voteBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition bg-spooky-950/40 text-purple-200 hover:bg-spooky-900 border border-purple-500/20";
       submitBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition bg-spooky-950/40 text-purple-200 hover:bg-spooky-900 border border-purple-500/20";
       adminBtn.className = "px-4 py-2 rounded-full font-semibold text-sm transition bg-spooky-950/40 text-purple-200 hover:bg-spooky-900 border border-purple-500/20 relative";
@@ -608,19 +646,26 @@
       }
     }
 
-    function verifyAdminPin() {
+    async function verifyAdminPin() {
       const inputPin = document.getElementById('admin-pin-input').value.trim();
-      if (inputPin === adminPin) {
-        isAdminUnlocked = true;
-        closeModal('modal-admin-auth');
-        switchTab('admin');
-        showToast("Welcome Admin!", "success");
-      } else {
-        document.getElementById('pin-error-msg').classList.remove('hidden');
+      try {
+        const res = await fetch(`${API_URL}?action=verifyPin&pin=${encodeURIComponent(inputPin)}`);
+        const data = await res.json();
+        if (data.valid) {
+          isAdminUnlocked = true;
+          closeModal('modal-admin-auth');
+          switchTab('admin');
+          showToast("Welcome Admin!", "success");
+        } else {
+          document.getElementById('pin-error-msg').classList.remove('hidden');
+        }
+      } catch (err) {
+        console.error("PIN check error:", err);
+        showToast("Error verifying PIN with cloud.", "warning");
       }
     }
 
-    function handleChangeAdminPin(e) {
+    async function handleChangeAdminPin(e) {
       e.preventDefault();
       const newPin = document.getElementById('new-pin-input').value.trim();
       if (newPin.length < 4) {
@@ -628,11 +673,20 @@
         return;
       }
 
-      if (confirm(`Are you sure you want to change the Admin PIN to "${newPin}"?`)) {
-        adminPin = newPin;
-        localStorage.setItem('costume_contest_admin_pin', newPin);
-        document.getElementById('new-pin-input').value = '';
-        showToast("Admin PIN successfully updated!", "success");
+      if (confirm(`Are you sure you want to change the Admin PIN globally to "${newPin}"?`)) {
+        try {
+          await fetch(API_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: 'updatePin', pin: newPin })
+          });
+          document.getElementById('new-pin-input').value = '';
+          showToast("Admin PIN successfully updated globally!", "success");
+        } catch (err) {
+          console.error("Error updating PIN:", err);
+          showToast("Failed to update PIN.", "warning");
+        }
       }
     }
 
@@ -641,7 +695,7 @@
     }
 
     // --- PUBLIC SUBMISSION LOGIC ---
-    function handlePublicEntrySubmit(e) {
+    async function handlePublicEntrySubmit(e) {
       e.preventDefault();
 
       const chef = document.getElementById('public-chef').value.trim();
@@ -650,7 +704,7 @@
 
       const newEntry = {
         id: 'c_' + Date.now(),
-        number: 0, // Assigned upon admin approval
+        number: 0,
         title,
         chef,
         desc,
@@ -658,9 +712,8 @@
       };
 
       entries.push(newEntry);
-      saveEntries();
+      await sendCloudAction('entries', 'add', newEntry);
 
-      // Reset form
       document.getElementById('public-chef').value = '';
       document.getElementById('public-title').value = '';
       document.getElementById('public-desc').value = '';
@@ -797,7 +850,7 @@
       return devId;
     }
 
-    function handleVoteSubmit(e) {
+    async function handleVoteSubmit(e) {
       e.preventDefault();
 
       if (!isVotingOpen) {
@@ -835,7 +888,7 @@
       };
 
       votes.push(ballot);
-      saveVotes();
+      await sendCloudAction('votes', 'add', ballot);
 
       userHasVoted = true;
       localStorage.setItem('costume_contest_has_voted', 'true');
@@ -856,7 +909,6 @@
       const commentCount = votes.filter(v => v.comment && v.comment.length > 0).length;
       document.getElementById('stat-comments-count').innerText = commentCount;
 
-      // Update Nav Badge Counter
       const counterBadge = document.getElementById('pending-badge-counter');
       if (pending.length > 0) {
         counterBadge.innerText = pending.length;
@@ -911,7 +963,7 @@
       });
     }
 
-    function approveEntry(id) {
+    async function approveEntry(id) {
       const entry = entries.find(e => e.id === id);
       if (!entry) return;
 
@@ -921,7 +973,7 @@
       entry.status = 'approved';
       entry.number = nextNum;
 
-      saveEntries();
+      await sendCloudAction('entries', 'update', entry, entry.id);
       renderVoterLineup();
       populateBallotDropdowns();
       renderAdminDashboard();
@@ -1109,7 +1161,7 @@
       document.getElementById('modal-entry-form').classList.remove('hidden');
     }
 
-    function handleSaveEntry(e) {
+    async function handleSaveEntry(e) {
       e.preventDefault();
 
       const id = document.getElementById('entry-id').value;
@@ -1122,6 +1174,7 @@
         const index = entries.findIndex(e => e.id === id);
         if (index !== -1) {
           entries[index] = { ...entries[index], number, title, chef, desc, status: 'approved' };
+          await sendCloudAction('entries', 'update', entries[index], id);
           showToast("Entry updated successfully!", "success");
         }
       } else {
@@ -1134,33 +1187,34 @@
           status: 'approved'
         };
         entries.push(newEntry);
+        await sendCloudAction('entries', 'add', newEntry);
         showToast("New costume entry added!", "success");
       }
 
-      saveEntries();
       closeModal('modal-entry-form');
       renderVoterLineup();
       populateBallotDropdowns();
       renderAdminDashboard();
     }
 
-    function deleteEntry(id) {
+    async function deleteEntry(id) {
       if (!confirm("Are you sure you want to remove this entry?")) {
         return;
       }
 
       entries = entries.filter(e => e.id !== id);
-      saveEntries();
+      await sendCloudAction('entries', 'delete', {}, id);
+
       renderVoterLineup();
       populateBallotDropdowns();
       renderAdminDashboard();
       showToast("Entry removed.", "info");
     }
 
-    function confirmResetVotes() {
-      if (confirm("DANGER: Are you sure you want to clear ALL ballots and comments? This action cannot be undone.")) {
+    async function confirmResetVotes() {
+      if (confirm("DANGER: Are you sure you want to clear ALL ballots and comments from the cloud? This action cannot be undone.")) {
         votes = [];
-        saveVotes();
+        await sendCloudAction('votes', 'clearVotes', {});
         localStorage.removeItem('costume_contest_has_voted');
         userHasVoted = false;
 
